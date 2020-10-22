@@ -25,6 +25,7 @@ const typeDefs = gql`
     hello: String
     me(name: String!): User
     users: [User]
+    posts: [Post]
   }
 
   type User {
@@ -36,8 +37,24 @@ const typeDefs = gql`
     height(unit: HeightUnit = CENTIMETER): Float
     weight(unit: WeightUnit = KILOGRAM): Float
     birthDay: String
+    posts: [Post]
+  }
+
+  type Post {
+    id: ID!
+    author: User
+    title: String
+    content: String
+    likeGivers: [User]
+  }
+
+  type Mutation {
+    addPost(title: String!, content: String!): Post
+    likePost(postId: ID!): Post
   }
 `;
+
+const meId = "1"; // 先寫死
 
 const resolvers = {
   Query: {
@@ -48,6 +65,38 @@ const resolvers = {
       return model.getUsers().find((user) => user.name === name);
     },
     users: () => model.getUsers(),
+    posts: () => model.getPosts(),
+  },
+  Mutation: {
+    addPost: (root, args, context) => {
+      const { title, content } = args;
+
+      model.getPosts().push({
+        id: model.getPosts().length + 1,
+        authorId: meId,
+        title,
+        content,
+        likeGivers: [],
+      });
+
+      return model.getPosts()[model.getPosts().length - 1];
+    },
+    likePost: (root, args, context) => {
+      const { postId } = args;
+      const post = model.findPostById(postId);
+
+      if (!post) throw new Error(`Post ${psotId} Not Exists`);
+
+      if (post.likeGiverIds.includes(meId)) {
+        const index = post.likeGiverIds.findIndex((v) => v === userId);
+
+        post.likeGiverIds.splice(index, 1);
+      } else {
+        post.likeGiverIds.push(meId);
+      }
+      
+      return post;
+    },
   },
   User: {
     name: (parent, args, context) => {
@@ -89,7 +138,24 @@ const resolvers = {
       else if (unit === "GRAM") return parent.weight * 100;
       else if (unit === "POUND") return parent.weight / 0.45359237;
       throw new Error(`Weight unit "${unit}" not supported.`);
-    }
+    },
+    posts: (parent, args, context) => {
+      const { id } = parent;
+
+      return model.filterPostsByAuthorId(id);
+    },
+  },
+  Post: {
+    likeGivers: (parent, args, context) => {
+      const { likeGiverIds } = parent;
+
+      return likeGiverIds.map((id) => model.findUserById(id));
+    },
+    author: (parent, args, context) => {
+      const { authorId } = parent;
+
+      return model.findUserById(authorId);
+    },
   },
 };
 
