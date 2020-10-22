@@ -3,9 +3,27 @@ const { ApolloServer, gql } = require("apollo-server-express");
 const model = require("./model");
 
 const typeDefs = gql`
+  """
+  高度單位
+  """
+  enum HeightUnit {
+    METRE
+    CENTIMETER
+    FOOT
+  }
+
+  """
+  重量單位
+  """
+  enum WeightUnit {
+    KILOGRAM
+    GRAM
+    POUND
+  }
+
   type Query {
     hello: String
-    me: User
+    me(name: String!): User
     users: [User]
   }
 
@@ -15,8 +33,8 @@ const typeDefs = gql`
     email: String
     gender: String
     friends: [User]
-    height: Float
-    weight: Float
+    height(unit: HeightUnit = CENTIMETER): Float
+    weight(unit: WeightUnit = KILOGRAM): Float
     birthDay: String
   }
 `;
@@ -24,7 +42,11 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     hello: () => "Hello world!",
-    me: () => model.getUsers()[0],
+    me: (root, args, context) => {
+      const { name } = args;
+
+      return model.getUsers().find((user) => user.name === name);
+    },
     users: () => model.getUsers(),
   },
   User: {
@@ -44,7 +66,7 @@ const resolvers = {
       if (today.month === birthDay.month && today.date === birthDay.date) {
         return parent.name + " ~~ Happy Birthday";
       }
-      
+
       return parent.name;
     },
     friends: (parent, args, context) => {
@@ -52,6 +74,22 @@ const resolvers = {
 
       return model.getUsers().filter((user) => friendIds.includes(user.id));
     },
+    height: (parent, args) => {
+      const { unit } = args;
+
+      if (!unit || unit === "CENTIMETER") return parent.height;
+      if (unit === "METRE") return parent.height / 100;
+      if (unit === "FOOT") return parent.height / 30.48;
+      throw new Error(`Height unit "${unit}" not supported.`);
+    },
+    weight: (parent, args, context) => {
+      const { unit } = args;
+
+      if (!unit || unit === "KILOGRAM") return parent.weight;
+      else if (unit === "GRAM") return parent.weight * 100;
+      else if (unit === "POUND") return parent.weight / 0.45359237;
+      throw new Error(`Weight unit "${unit}" not supported.`);
+    }
   },
 };
 
