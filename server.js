@@ -48,8 +48,13 @@ const typeDefs = gql`
     likeGivers: [User]
   }
 
+  input AddPostInput {
+    title: String!
+    content: String!
+  }
+
   type Mutation {
-    addPost(title: String!, content: String!): Post
+    addPost(input: AddPostInput!): Post
     likePost(postId: ID!): Post
   }
 `;
@@ -69,7 +74,8 @@ const resolvers = {
   },
   Mutation: {
     addPost: (root, args, context) => {
-      const { title, content } = args;
+      const { input } = args;
+      const { title, content } = input;
 
       model.getPosts().push({
         id: model.getPosts().length + 1,
