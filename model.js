@@ -8,7 +8,7 @@ const users = [
     friendIds: ["2", "3"],
     height: 175.0,
     weight: 70.0,
-    birthDay: "1997-07-12",
+    birthDay: "1997-10-22",
   },
   {
     id: "2",
