@@ -85,4 +85,11 @@ module.exports = {
       createdAt: new Date().toISOString(),
     }),
   updatePost: (postId, data) => Object.assign(findPostByPostId(postId), data),
+  addUser: ({ name, email, password }) =>
+    (users[users.length] = {
+      id: users[users.length - 1].id + 1,
+      name,
+      email,
+      password,
+    }),
 };
